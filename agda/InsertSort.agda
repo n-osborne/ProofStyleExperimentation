@@ -12,4 +12,7 @@ insert n (x ∷ xs) with n <ᵇ x
 ... | true  = n ∷ x ∷ xs
 ... | false = x ∷ (insert n xs)
 
+insertsort : {m : ℕ} → Vec ℕ m → Vec ℕ m
+insertsort []       = []
+insertsort (x ∷ xs) = insert x (insertsort xs)
 
