@@ -108,3 +108,41 @@ Proof.
   - now apply nilSorted.
   - now apply Insert_Sorted.
 Qed.
+
+(** We proceed in a similar way for the permutation aspect of the specifications
+    of a sorting algorithm, proving the property firstly for the insert function,
+    then for the insert_sort itself. *)
+
+(** The first proof is done by an induction on the list and then un functional
+    induction on the insert function, using some properties of Permutation *)
+Lemma Insert_Permutation: forall n l, Permutation (n :: l) (insert n l).
+Proof.
+  intro n; induction l; trivial.
+  functional induction (insert n (a :: l)); trivial.
+  apply (perm_skip x) in IHl1.
+  apply Permutation_trans with (l':=(x :: n :: xs)).
+  + apply perm_swap.
+  + assumption.
+Qed.
+
+(** The second proof is done simply by an induction on the list, using some 
+    properties of Permutation and the Lemma about the insert function *)
+Lemma InsertSort_Permutation: forall l, Permutation l (insert_sort l).
+Proof.
+  induction l; trivial.
+  apply (perm_skip a) in IHl.
+  apply Permutation_trans with (l':=(a :: insert_sort l)); trivial.
+  apply Insert_Permutation.
+Qed.
+
+(** Now we can package all that in a single definition *)
+Definition SortingAlgorithm (f: list nat -> list nat) :=
+  forall l, Permutation l (f l) /\ Sorted (f l).
+  
+Lemma insert_sort_sorting_algorithm: SortingAlgorithm insert_sort.
+Proof.
+  split.
+  - apply InsertSort_Permutation.
+  - apply InsertSort_Sorted.
+Qed.
+
