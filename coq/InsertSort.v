@@ -100,20 +100,11 @@ Proof.
         ** now inversion ant.
 Qed.
 
-        
-
-
-
-Fixpoint occurrences (n: nat) (l: list nat) : nat :=
-  match l with
-  | []     => O
-  | x :: xs => match eqb n x with
-             | true  => S (occurrences n xs)
-             | false => occurrences n xs
-             end
-  end.
-
-Inductive Occurrences (n: nat): list nat -> nat -> Prop :=
-| empty : Occurrences n [] O
-| same  : forall l o, Occurrences n l o -> Occurrences n (n :: l) (S o)
-| diff  : forall l o x, Occurrences n l o -> x <> n -> Occurrences n (x :: l) o.
+(** The proof that the result of the sorting algorithm is a Sorted list is quite trivial
+    at this point. *)
+Lemma InsertSort_Sorted: forall l, Sorted (insert_sort l).
+Proof.
+  induction l.
+  - now apply nilSorted.
+  - now apply Insert_Sorted.
+Qed.
