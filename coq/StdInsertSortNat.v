@@ -1,3 +1,8 @@
+(**
+   In this module, we prove that the insert sort algorithm is indeed a
+   sorting algorithm in a standard way. That is using Inductive Proposition
+   to define what is a sorting algorithm.
+*)
 
 
 Require Import Nat.
@@ -50,6 +55,7 @@ Fixpoint insert_sort (l: list nat) : list nat :=
   | x :: xs => insert x (insert_sort xs)
   end.
 
+(** * The Proof *)
 (**
     The first thing we want to prove is that the insert function preserves sorting,
     that is, the insertion of a nat in a sorted list gives back a sorted list.
@@ -74,7 +80,7 @@ Proof.
   - assumption.
 Qed.
 
-(** *The proof 
+(**
     Start with an induction on the list, then functional induction on 
     calls of insert (twice). The rest is book-keeping.
 *)
