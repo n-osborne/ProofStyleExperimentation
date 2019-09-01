@@ -1,20 +1,41 @@
 module InsertSort where
 
-open import Data.Bool                                   using (Bool; true; false)
+open import Data.Bool                                   using (Bool; true; false; T)
 open import Data.Vec                                    using (Vec; []; _∷_)
-open import Data.Nat                                    using (ℕ; zero; suc; _<ᵇ_; _≡ᵇ_; _<_)
+open import Data.Nat                                    using (ℕ; zero; suc; _<ᵇ_; _≡ᵇ_; _<_; _<?_)
+open import Data.Nat.Properties                         using (<ᵇ⇒<)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
+open import Relation.Nullary                            using (Dec; yes; no)
 
+-- *****************
+-- * The algorithm *
+-- *****************
 
-insert : {m : ℕ} → ℕ → Vec ℕ m → Vec ℕ (suc m)
-insert n [] = n ∷ []
-insert n (x ∷ xs) with n <ᵇ x
+-- We define a first version a insert sort algorithm using boolean lesser than function
+insert_bool : {m : ℕ} → ℕ → Vec ℕ m → Vec ℕ (suc m)
+insert_bool n [] = n ∷ []
+insert_bool n (x ∷ xs) with n <ᵇ x
 ... | true  = n ∷ x ∷ xs
-... | false = x ∷ (insert n xs)
+... | false = x ∷ (insert_bool n xs)
 
-insertsort : {m : ℕ} → Vec ℕ m → Vec ℕ m
-insertsort []       = []
-insertsort (x ∷ xs) = insert x (insertsort xs)
+insertsort_bool : {m : ℕ} → Vec ℕ m → Vec ℕ m
+insertsort_bool []       = []
+insertsort_bool (x ∷ xs) = insert_bool x (insertsort_bool xs)
+
+-- The we propose a second version using the Dec Relation
+insert_Dec : {m : ℕ} → ℕ → Vec ℕ m → Vec ℕ (suc m)
+insert_Dec n [] = n ∷ []
+insert_Dec n (x ∷ xs) with n <? x
+... | yes _ = n ∷ x ∷ xs
+... | no _  = x ∷ (insert_Dec n xs)
+
+insertsort_Dec : {m : ℕ} → Vec ℕ m → Vec ℕ m
+insertsort_Dec []       = []
+insertsort_Dec (x ∷ xs) = insert_Dec x (insertsort_Dec xs)
+
+-- *************
+-- * The proof *
+-- *************
 
 occurrences : {m : ℕ} → ℕ → Vec ℕ m → ℕ
 occurrences n []    = zero
@@ -60,3 +81,11 @@ data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
                Permutation xs ys →
                Permutation ys zs →
                Permutation xs zs
+
+
+
+-- insert-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insert x xs)
+-- insert-sorted-in-out x [] sxs = singleton_sorted
+-- insert-sorted-in-out x (x₁ ∷ xs) sxs with x <ᵇ x₁
+-- ... | true  = cons_sorted (<ᵇ⇒< x x₁ (T (x <ᵇ x₁))) sxs
+-- ... | false = {!!}
