@@ -2,7 +2,7 @@ module InsertSort where
 
 open import Data.Bool                                   using (Bool; true; false)
 open import Data.Vec                                    using (Vec; []; _∷_)
-open import Data.Nat                                    using (ℕ; zero; suc; _<ᵇ_; _≡ᵇ_)
+open import Data.Nat                                    using (ℕ; zero; suc; _<ᵇ_; _≡ᵇ_; _<_)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 
 
@@ -37,3 +37,12 @@ data Occurrences : ∀ {m : ℕ} → ℕ → Vec ℕ m → ℕ → Set where
         (n ≡ᵇ x) ≡ false →
         Occurrences n xs o →
         Occurrences n (x ∷ xs) o 
+
+-- We define the Sorted predicate for nat vectors
+data Sorted : ∀ {m : ℕ} → Vec ℕ m  → Set where
+  empty_sorted     : Sorted []
+  singleton_sorted : ∀ {n : ℕ} → Sorted (n ∷ [])
+  cons_sorted      : ∀ {x y m : ℕ}{xs : Vec ℕ m} →
+                     y < x →
+                     Sorted (x ∷ xs) →
+                     Sorted (y ∷ x ∷ xs)
