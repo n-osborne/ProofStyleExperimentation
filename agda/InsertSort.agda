@@ -46,3 +46,17 @@ data Sorted : ∀ {m : ℕ} → Vec ℕ m  → Set where
                      y < x →
                      Sorted (x ∷ xs) →
                      Sorted (y ∷ x ∷ xs)
+
+-- And the Permutation relation
+data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
+  nil_perm   : Permutation [] []
+  skip_perm  : ∀ {x m : ℕ}{xs ys : Vec ℕ m} →
+               Permutation xs ys →
+               Permutation (x ∷ xs) (x ∷ ys)
+  swap_perm  : ∀ {x y m : ℕ}{xs ys : Vec ℕ m} →
+               Permutation xs ys →
+               Permutation (x ∷ y ∷ xs) (y ∷ x ∷ ys)
+  trans_perm : ∀ {m : ℕ}{xs ys zs : Vec ℕ m} →
+               Permutation xs ys →
+               Permutation ys zs →
+               Permutation xs zs
