@@ -2,8 +2,8 @@ module InsertSort where
 
 open import Data.Bool                                   using (Bool; true; false; T)
 open import Data.Vec                                    using (Vec; []; _∷_)
-open import Data.Nat                                    using (ℕ; zero; suc; _<ᵇ_; _≡ᵇ_; _<_; _<?_)
-open import Data.Nat.Properties                         using (<ᵇ⇒<)
+open import Data.Nat
+open import Data.Nat.Properties                         using (<ᵇ⇒<; <⇒≤)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 open import Relation.Nullary                            using (Dec; yes; no)
 
@@ -18,20 +18,20 @@ insert_bool n (x ∷ xs) with n <ᵇ x
 ... | true  = n ∷ x ∷ xs
 ... | false = x ∷ (insert_bool n xs)
 
-insertsort_bool : {m : ℕ} → Vec ℕ m → Vec ℕ m
-insertsort_bool []       = []
-insertsort_bool (x ∷ xs) = insert_bool x (insertsort_bool xs)
+insertsortBool : {m : ℕ} → Vec ℕ m → Vec ℕ m
+insertsortBool []       = []
+insertsortBool (x ∷ xs) = insert_bool x (insertsortBool xs)
 
 -- The we propose a second version using the Dec Relation
-insert_Dec : {m : ℕ} → ℕ → Vec ℕ m → Vec ℕ (suc m)
-insert_Dec n [] = n ∷ []
-insert_Dec n (x ∷ xs) with n <? x
+insertDec : {m : ℕ} → ℕ → Vec ℕ m → Vec ℕ (suc m)
+insertDec n [] = n ∷ []
+insertDec n (x ∷ xs) with n <? x
 ... | yes _ = n ∷ x ∷ xs
-... | no _  = x ∷ (insert_Dec n xs)
+... | no _  = x ∷ (insertDec n xs)
 
-insertsort_Dec : {m : ℕ} → Vec ℕ m → Vec ℕ m
-insertsort_Dec []       = []
-insertsort_Dec (x ∷ xs) = insert_Dec x (insertsort_Dec xs)
+insertsortDec : {m : ℕ} → Vec ℕ m → Vec ℕ m
+insertsortDec []       = []
+insertsortDec (x ∷ xs) = insertDec x (insertsortDec xs)
 
 -- *************
 -- * The proof *
@@ -61,27 +61,82 @@ data Occurrences : ∀ {m : ℕ} → ℕ → Vec ℕ m → ℕ → Set where
 
 -- We define the Sorted predicate for nat vectors
 data Sorted : ∀ {m : ℕ} → Vec ℕ m  → Set where
-  empty_sorted     : Sorted []
-  singleton_sorted : ∀ {n : ℕ} → Sorted (n ∷ [])
-  cons_sorted      : ∀ {x y m : ℕ}{xs : Vec ℕ m} →
-                     y < x →
+  empty-sorted     : Sorted []
+  singleton-sorted : ∀ {n : ℕ} → Sorted (n ∷ [])
+  cons-sorted      : ∀ {x y m : ℕ}{xs : Vec ℕ m} →
+                     y ≤ x →
                      Sorted (x ∷ xs) →
                      Sorted (y ∷ x ∷ xs)
 
 -- And the Permutation relation
 data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
-  nil_perm   : Permutation [] []
-  skip_perm  : ∀ {x m : ℕ}{xs ys : Vec ℕ m} →
+  nil-perm   : Permutation [] []
+  skip-perm  : ∀ {x m : ℕ}{xs ys : Vec ℕ m} →
                Permutation xs ys →
                Permutation (x ∷ xs) (x ∷ ys)
-  swap_perm  : ∀ {x y m : ℕ}{xs ys : Vec ℕ m} →
+  swap-perm  : ∀ {m : ℕ}{xs ys : Vec ℕ m}(x y : ℕ) →
                Permutation xs ys →
                Permutation (x ∷ y ∷ xs) (y ∷ x ∷ ys)
-  trans_perm : ∀ {m : ℕ}{xs ys zs : Vec ℕ m} →
+  trans-perm : ∀ {m : ℕ}{xs ys zs : Vec ℕ m} →
                Permutation xs ys →
                Permutation ys zs →
                Permutation xs zs
 
+-- intermediate lemma that every Vec is its own Permutation
+permutation-xs-xs : ∀ {m : ℕ}(xs : Vec ℕ m) → Permutation xs xs
+permutation-xs-xs []       = nil-perm
+permutation-xs-xs (x ∷ xs) = skip-perm (permutation-xs-xs xs)
+
+{- 
+  Proof that insertDec produces a permutation
+
+  We proceed by induction on xs
+
+  - Base case is trivial
+
+  - Induction case split in two on x <? x₁
+      yes -> skip-term 
+      no  -> result is (x₁ ∷ (insertDec x xs))
+             So the Goal is : Permutation (x ∷ x₁ ∷ xs) (x₁ ∷ (insertDec x xs))
+             This is a work for trans-perm with:
+               + (x ∷ x₁ ∷ xs) as xs
+               + (x₁ ∷ x ∷ xs) as ys
+               + (x₁ ∷ (insertDec x xs)) as zs
+          So, there are two sub goals:
+          1. Permutation (x ∷ x₁ ∷ xs) (x₁ ∷ x ∷ xs) => by swap-perm
+          2. Permutation (x₁ ∷ x ∷ xs) (x₁ ∷ (insertDec x xs)) => by skip-perm and induction hypothesis
+-}
+insertDec-Permutation-cons : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Permutation (x ∷ xs) (insertDec x xs)
+insertDec-Permutation-cons x [] = skip-perm nil-perm
+insertDec-Permutation-cons x (x₁ ∷ xs) with x <? x₁
+... | yes _ = skip-perm (permutation-xs-xs (x₁ ∷ xs))
+... | no  _ = trans-perm (swap-perm x x₁ (permutation-xs-xs xs)) (skip-perm (insertDec-Permutation-cons x xs))
+
+
+
+{-
+  Proof that insertDec preserves the Sorted Property
+
+  This is the delicate part.
+
+  We proceed by induction on the list
+  Then we need some functional induction on the result of `insertDec x xs`
+
+  The nil case is trivial
+  The cons case need a case split on x <? x₁
+  The yes case is obvious by inclusion of ≤ in <
+  The no case need to know that x₁ is lesser than the head of (insertDec x xs)
+  Pb: we don't know what is the head of (insertDec x xs) -- and we need to know
+      in order to build a proof the cons-sorted
+
+  At his point in the std-Coq version, we would use a `functional induction` on the
+  `insertDec x xs`, but here, this expression is not in our environment
+-}
+insertDec-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insertDec x xs)
+insertDec-sorted-in-out x [] sxs = singleton-sorted
+insertDec-sorted-in-out x (x₁ ∷ xs) sxs with x <? x₁
+... | yes p = cons-sorted (<⇒≤ p) sxs
+... | no ¬p = {!!}
 
 
 -- insert-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insert x xs)
@@ -89,3 +144,5 @@ data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
 -- insert-sorted-in-out x (x₁ ∷ xs) sxs with x <ᵇ x₁
 -- ... | true  = cons_sorted (<ᵇ⇒< x x₁ (T (x <ᵇ x₁))) sxs
 -- ... | false = {!!}
+
+
