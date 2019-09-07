@@ -3,7 +3,7 @@ module InsertSort where
 open import Data.Bool                                   using (Bool; true; false; T)
 open import Data.Vec                                    using (Vec; []; _∷_)
 open import Data.Nat
-open import Data.Nat.Properties                         using (<ᵇ⇒<; <⇒≤; ≤-trans)
+open import Data.Nat.Properties                         using (<ᵇ⇒<; <⇒≤; ≤-trans; ≰⇒≥)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 open import Relation.Nullary                            using (Dec; yes; no)
 
@@ -98,6 +98,10 @@ data Sorted₂ : ∀ {m : ℕ} → Vec ℕ m → Set where
 sorted₂-x≤*xs : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted₂ (x ∷ xs) → x ≤* xs
 sorted₂-x≤*xs (cons-sorted₂ x≤*xs _) = x≤*xs
 
+tail-sorted₂ : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted₂ (x ∷ xs) → Sorted₂ xs
+tail-sorted₂ (cons-sorted₂ x empty-sorted₂) = empty-sorted₂
+tail-sorted₂ (cons-sorted₂ x (cons-sorted₂ x₁ sxs)) = cons-sorted₂ x₁ sxs
+
 -- And the Permutation relation
 data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
   nil-perm   : Permutation [] []
@@ -179,9 +183,15 @@ insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-so
 -- ... | true  = cons_sorted (<ᵇ⇒< x x₁ (T (x <ᵇ x₁))) sxs
 -- ... | false = {!!}
 
+aux : ∀ {m x₁ x₂ : ℕ}{xs : Vec ℕ m} → x₂ ≤ x₁ → Sorted₂ (x₂ ∷ xs) → x₂ ≤* (insertDec x₁ xs)
+aux {xs = []} x₂≤x₁ sx₂xs = x≤*xxs x₂≤x₁ x≤*[]
+aux {m}{x₁}{x₂}{xs = x ∷ xs} x₂≤x₁ sx₂xs with x₁ ≤? x
+aux {.(suc _)} {x₁} {x₂} {x ∷ xs} x₂≤x₁ (cons-sorted₂ (x≤*xxs x₃ x₄) sx₂xs) | yes p = x≤*xxs x₂≤x₁ (x≤*xxs (≤-trans x₂≤x₁ p) x₄)
+aux {.(suc _)} {x₁} {x₂} {x ∷ xs} x₂≤x₁ (cons-sorted₂ (x≤*xxs x₃ x₄) (cons-sorted₂ x₅ sx₂xs)) | no ¬p = x≤*xxs x₃ (aux x₂≤x₁ (cons-sorted₂ x₄ sx₂xs))
+
 
 insertDec-Sorted₂-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted₂ xs → Sorted₂ (insertDec x xs)
 insertDec-Sorted₂-in-out x [] sxs = cons-sorted₂ x≤*[] sxs
 insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs with x ≤? x₁
 insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | yes p = cons-sorted₂ (x≤*xxs p (≤*-trans p (sorted₂-x≤*xs sxs))) sxs
-insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | no ¬p = {!!}
+insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | no ¬p = cons-sorted₂ (aux (≰⇒≥ ¬p) sxs) (insertDec-Sorted₂-in-out x xs (tail-sorted₂ sxs))
