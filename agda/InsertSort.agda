@@ -3,7 +3,7 @@ module InsertSort where
 open import Data.Bool                                   using (Bool; true; false; T)
 open import Data.Vec                                    using (Vec; []; _∷_)
 open import Data.Nat
-open import Data.Nat.Properties                         using (<ᵇ⇒<; <⇒≤)
+open import Data.Nat.Properties                         using (<ᵇ⇒<; <⇒≤; ≤-trans)
 open import Relation.Binary.PropositionalEquality as Eq using (_≡_; refl)
 open import Relation.Nullary                            using (Dec; yes; no)
 
@@ -77,10 +77,20 @@ tail-sorted : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted (x ∷ xs) → Sorted x
 tail-sorted singleton-sorted = empty-sorted
 tail-sorted (cons-sorted x sxs) = sxs
 
+{- Second definition for Sorted Predicate use the binary relation ≤* which means that 
+the nat is lesser or equal to each of the elements of the Vec
+-}
 data _≤*_ : {m : ℕ} → ℕ → Vec ℕ m → Set where
   x≤*[]   : ∀ {x : ℕ} → x ≤* []
   x≤*xxs  : ∀ {x x₁ m : ℕ}{xs : Vec ℕ m} → x ≤ x₁ → x ≤* xs → x ≤* (x₁ ∷ xs)
-  
+
+{- In the process of the proof we will need the transitivity of ≤*
+-}
+≤*-trans : ∀ {x y m : ℕ}{ys : Vec ℕ m} → x ≤ y → y ≤* ys → x ≤* ys
+≤*-trans {ys = []} x≤y y≤*ys                  = x≤*[]
+≤*-trans {ys = x ∷ ys} x≤y (x≤*xxs y≤x y≤*ys) = x≤*xxs (≤-trans x≤y y≤x) (≤*-trans x≤y y≤*ys)
+
+
 data Sorted₂ : ∀ {m : ℕ} → Vec ℕ m → Set where
   empty-sorted₂ : Sorted₂ []
   cons-sorted₁  : ∀ {x m : ℕ}{xs : Vec ℕ m} → x ≤* xs → Sorted₂ xs → Sorted₂ (x ∷ xs)
