@@ -59,7 +59,12 @@ data Occurrences : ∀ {m : ℕ} → ℕ → Vec ℕ m → ℕ → Set where
         Occurrences n xs o →
         Occurrences n (x ∷ xs) o 
 
--- We define the Sorted predicate for nat vectors
+{- We define the Sorted predicate for nat vectors
+
+   Note that this definition will need us to use a functional induction
+   that is an induction on the different values of the recursive call in 
+   insertDec (see std-Coq version for example)
+-}
 data Sorted : ∀ {m : ℕ} → Vec ℕ m  → Set where
   empty-sorted     : Sorted []
   singleton-sorted : ∀ {n : ℕ} → Sorted (n ∷ [])
@@ -68,6 +73,18 @@ data Sorted : ∀ {m : ℕ} → Vec ℕ m  → Set where
                      Sorted (x ∷ xs) →
                      Sorted (y ∷ x ∷ xs)
 
+tail-sorted : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted (x ∷ xs) → Sorted xs
+tail-sorted singleton-sorted = empty-sorted
+tail-sorted (cons-sorted x sxs) = sxs
+
+data _≤*_ : {m : ℕ} → ℕ → Vec ℕ m → Set where
+  x≤*[]   : ∀ {x : ℕ} → x ≤* []
+  x≤*xxs  : ∀ {x x₁ m : ℕ}{xs : Vec ℕ m} → x ≤ x₁ → x ≤* xs → x ≤* (x₁ ∷ xs)
+  
+data Sorted₂ : ∀ {m : ℕ} → Vec ℕ m → Set where
+  empty-sorted₂ : Sorted₂ []
+  cons-sorted₁  : ∀ {x m : ℕ}{xs : Vec ℕ m} → x ≤* xs → Sorted₂ xs → Sorted₂ (x ∷ xs)
+  
 -- And the Permutation relation
 data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
   nil-perm   : Permutation [] []
@@ -135,10 +152,14 @@ insertDec-Permutation-cons x (x₁ ∷ xs) with x <? x₁
 insertDec-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insertDec x xs)
 insertDec-sorted-in-out x [] sxs = singleton-sorted
 insertDec-sorted-in-out x (x₁ ∷ xs) sxs with x <? x₁
-... | yes p = cons-sorted (<⇒≤ p) sxs
-... | no ¬p = {!!}
-
-
+insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | yes p = cons-sorted (<⇒≤ p) sxs
+insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p with insertDec x xs
+insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-sorted {!!} {!!} -- cons-sorted x₁≤x₂ (Sorted xs₂)
+--insertDec-sorted-in-out x (x₁ ∷ []) sxs  | no ¬p   = {!!}
+--insertDec-sorted-in-out x (x₁ ∷ x₂ ∷ xs) sxs  | no ¬p with insertDec x (x₂ ∷ xs)
+--insertDec-sorted-in-out x (x₁ ∷ x₂ ∷ xs) sxs  | no ¬p | x ∷ x₂ ∷ xs           = ?
+--insertDec-sorted-in-out x (x₁ ∷ x₂ ∷ xs) sxs  | no ¬p | x ∷ x₂ ∷ xs = ?
+ 
 -- insert-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insert x xs)
 -- insert-sorted-in-out x [] sxs = singleton_sorted
 -- insert-sorted-in-out x (x₁ ∷ xs) sxs with x <ᵇ x₁
