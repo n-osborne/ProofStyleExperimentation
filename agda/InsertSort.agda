@@ -25,7 +25,7 @@ insertsortBool (x ∷ xs) = insert_bool x (insertsortBool xs)
 -- The we propose a second version using the Dec Relation
 insertDec : {m : ℕ} → ℕ → Vec ℕ m → Vec ℕ (suc m)
 insertDec n [] = n ∷ []
-insertDec n (x ∷ xs) with n <? x
+insertDec n (x ∷ xs) with n ≤? x
 ... | yes _ = n ∷ x ∷ xs
 ... | no _  = x ∷ (insertDec n xs)
 
@@ -93,8 +93,11 @@ data _≤*_ : {m : ℕ} → ℕ → Vec ℕ m → Set where
 
 data Sorted₂ : ∀ {m : ℕ} → Vec ℕ m → Set where
   empty-sorted₂ : Sorted₂ []
-  cons-sorted₁  : ∀ {x m : ℕ}{xs : Vec ℕ m} → x ≤* xs → Sorted₂ xs → Sorted₂ (x ∷ xs)
-  
+  cons-sorted₂  : ∀ {x m : ℕ}{xs : Vec ℕ m} → x ≤* xs → Sorted₂ xs → Sorted₂ (x ∷ xs)
+
+sorted₂-x≤*xs : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted₂ (x ∷ xs) → x ≤* xs
+sorted₂-x≤*xs (cons-sorted₂ x≤*xs _) = x≤*xs
+
 -- And the Permutation relation
 data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
   nil-perm   : Permutation [] []
@@ -135,7 +138,7 @@ permutation-xs-xs (x ∷ xs) = skip-perm (permutation-xs-xs xs)
 -}
 insertDec-Permutation-cons : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Permutation (x ∷ xs) (insertDec x xs)
 insertDec-Permutation-cons x [] = skip-perm nil-perm
-insertDec-Permutation-cons x (x₁ ∷ xs) with x <? x₁
+insertDec-Permutation-cons x (x₁ ∷ xs) with x ≤? x₁
 ... | yes _ = skip-perm (permutation-xs-xs (x₁ ∷ xs))
 ... | no  _ = trans-perm (swap-perm x x₁ (permutation-xs-xs xs)) (skip-perm (insertDec-Permutation-cons x xs))
 
@@ -150,9 +153,9 @@ insertDec-Permutation-cons x (x₁ ∷ xs) with x <? x₁
   Then we need some functional induction on the result of `insertDec x xs`
 
   The nil case is trivial
-  The cons case need a case split on x <? x₁
-  The yes case is obvious by inclusion of ≤ in <
-  The no case need to know that x₁ is lesser than the head of (insertDec x xs)
+  The cons case need a case split on x ≤? x₁
+  The yes case is obvious
+  The no case need to know that x₁ is lesser or equal than the head of (insertDec x xs)
   Pb: we don't know what is the head of (insertDec x xs) -- and we need to know
       in order to build a proof the cons-sorted
 
@@ -161,8 +164,8 @@ insertDec-Permutation-cons x (x₁ ∷ xs) with x <? x₁
 -}
 insertDec-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insertDec x xs)
 insertDec-sorted-in-out x [] sxs = singleton-sorted
-insertDec-sorted-in-out x (x₁ ∷ xs) sxs with x <? x₁
-insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | yes p = cons-sorted (<⇒≤ p) sxs
+insertDec-sorted-in-out x (x₁ ∷ xs) sxs with x ≤? x₁
+insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | yes p = cons-sorted p sxs
 insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p with insertDec x xs
 insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-sorted {!!} {!!} -- cons-sorted x₁≤x₂ (Sorted xs₂)
 --insertDec-sorted-in-out x (x₁ ∷ []) sxs  | no ¬p   = {!!}
@@ -177,3 +180,8 @@ insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-so
 -- ... | false = {!!}
 
 
+insertDec-Sorted₂-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted₂ xs → Sorted₂ (insertDec x xs)
+insertDec-Sorted₂-in-out x [] sxs = cons-sorted₂ x≤*[] sxs
+insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs with x ≤? x₁
+insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | yes p = cons-sorted₂ (x≤*xxs p (≤*-trans p (sorted₂-x≤*xs sxs))) sxs
+insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | no ¬p = {!!}
