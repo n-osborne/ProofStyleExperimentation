@@ -77,8 +77,14 @@ tail-sorted : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted (x ∷ xs) → Sorted x
 tail-sorted singleton-sorted = empty-sorted
 tail-sorted (cons-sorted x sxs) = sxs
 
-{- Second definition for Sorted Predicate use the binary relation ≤* which means that 
-the nat is lesser or equal to each of the elements of the Vec
+{- 
+In order to avoid using functional induction, we use another definition of
+the sorted property, one that contains explicitly more information.
+
+This second definition for Sorted Predicate use the binary relation ≤* 
+between a ℕ and a Vec ℕ
+This relation means that the nat is lesser or equal to each of the elements 
+of the Vec
 -}
 data _≤*_ : {m : ℕ} → ℕ → Vec ℕ m → Set where
   x≤*[]   : ∀ {x : ℕ} → x ≤* []
@@ -157,45 +163,8 @@ insertDec-Permutation-cons x (x₁ ∷ xs) with x ≤? x₁
 ... | no  _ = trans-perm (swap-perm x x₁ (permutation-xs-xs xs)) (skip-perm (insertDec-Permutation-cons x xs))
 
 
-
+-- *Proof that insertDec preserves the Sorted₂ property.*
 {-
-  Proof that insertDec preserves the Sorted Property
-
-  This is the delicate part.
-
-  We proceed by induction on the list
-  Then we need some functional induction on the result of `insertDec x xs`
-
-  The nil case is trivial
-  The cons case need a case split on x ≤? x₁
-  The yes case is obvious
-  The no case need to know that x₁ is lesser or equal than the head of (insertDec x xs)
-  Pb: we don't know what is the head of (insertDec x xs) -- and we need to know
-      in order to build a proof the cons-sorted
-
-  At his point in the std-Coq version, we would use a `functional induction` on the
-  `insertDec x xs`, but here, this expression is not in our environment
--}
-insertDec-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insertDec x xs)
-insertDec-sorted-in-out x [] sxs = singleton-sorted
-insertDec-sorted-in-out x (x₁ ∷ xs) sxs with x ≤? x₁
-insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | yes p = cons-sorted p sxs
-insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p with insertDec x xs
-insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-sorted {!!} {!!} -- cons-sorted x₁≤x₂ (Sorted xs₂)
---insertDec-sorted-in-out x (x₁ ∷ []) sxs  | no ¬p   = {!!}
---insertDec-sorted-in-out x (x₁ ∷ x₂ ∷ xs) sxs  | no ¬p with insertDec x (x₂ ∷ xs)
---insertDec-sorted-in-out x (x₁ ∷ x₂ ∷ xs) sxs  | no ¬p | x ∷ x₂ ∷ xs           = ?
---insertDec-sorted-in-out x (x₁ ∷ x₂ ∷ xs) sxs  | no ¬p | x ∷ x₂ ∷ xs = ?
- 
--- insert-sorted-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted xs → Sorted (insert x xs)
--- insert-sorted-in-out x [] sxs = singleton_sorted
--- insert-sorted-in-out x (x₁ ∷ xs) sxs with x <ᵇ x₁
--- ... | true  = cons_sorted (<ᵇ⇒< x x₁ (T (x <ᵇ x₁))) sxs
--- ... | false = {!!}
-
-{-
-  Proof that insertDec preserves the Sorted₂ property.
-
   We will need an auxiliary lemma to avoid that the proof in the recursive case became to big
 -}
 aux : ∀ {m x₁ x₂ : ℕ}{xs : Vec ℕ m} → x₂ ≤ x₁ → Sorted₂ (x₂ ∷ xs) → x₂ ≤* (insertDec x₁ xs)
@@ -203,10 +172,10 @@ aux {xs = []} x₂≤x₁ sx₂xs = x≤*xxs x₂≤x₁ x≤*[]
 aux {x₁ = x₁}{xs = x ∷ xs} x₂≤x₁ sx₂xs with x₁ ≤? x
 aux x₂≤x₁ sx₂xs | yes p = x≤*xxs x₂≤x₁ (x≤*xxs (≤-trans x₂≤x₁ p) (cons-sorted₂-inv₄ sx₂xs))
 aux x₂≤x₁ sx₂xs | no ¬p = x≤*xxs
-                             (cons-sorted₂-inv₃ sx₂xs) -- x₂ ≤ x
-                             (aux x₂≤x₁ (cons-sorted₂-inv₅ sx₂xs)) -- x₂ ≤* insertDec x₁ xs
+                          (cons-sorted₂-inv₃ sx₂xs) -- x₂ ≤ x
+                          (aux x₂≤x₁ (cons-sorted₂-inv₅ sx₂xs)) -- x₂ ≤* insertDec x₁ xs
 
-{—
+{-
   We procced by induction on the Vec
 
   the [] case is trivial.
@@ -222,5 +191,9 @@ aux x₂≤x₁ sx₂xs | no ¬p = x≤*xxs
 insertDec-Sorted₂-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted₂ xs → Sorted₂ (insertDec x xs)
 insertDec-Sorted₂-in-out x [] sxs = cons-sorted₂ x≤*[] sxs
 insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs with x ≤? x₁
-insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | yes p = cons-sorted₂ (x≤*xxs p (≤*-trans p (cons-sorted₂-inv₁ sxs))) sxs
-insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | no ¬p = cons-sorted₂ (aux (≰⇒≥ ¬p) sxs) (insertDec-Sorted₂-in-out x xs (cons-sorted₂-inv₂ sxs))
+insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | yes p = cons-sorted₂
+                                                   (x≤*xxs p (≤*-trans p (cons-sorted₂-inv₁ sxs)))
+                                                   sxs
+insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs | no ¬p = cons-sorted₂
+                                                   (aux (≰⇒≥ ¬p) sxs)
+                                                   (insertDec-Sorted₂-in-out x xs (cons-sorted₂-inv₂ sxs))
