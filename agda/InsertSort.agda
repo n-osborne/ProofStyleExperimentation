@@ -95,6 +95,7 @@ data Sorted₂ : ∀ {m : ℕ} → Vec ℕ m → Set where
   empty-sorted₂ : Sorted₂ []
   cons-sorted₂  : ∀ {x m : ℕ}{xs : Vec ℕ m} → x ≤* xs → Sorted₂ xs → Sorted₂ (x ∷ xs)
 
+-- We will need some inversion functions on the cons-sorted₂ constructor
 cons-sorted₂-inv₁ : ∀ {m x : ℕ}{xs : Vec ℕ m} → Sorted₂ (x ∷ xs) → x ≤* xs
 cons-sorted₂-inv₁ (cons-sorted₂ x≤*xs _) = x≤*xs
 
@@ -107,6 +108,9 @@ cons-sorted₂-inv₃ (cons-sorted₂ (x≤*xxs x₁≤x₂ _) _) = x₁≤x₂
 
 cons-sorted₂-inv₄ : ∀ {x₁ x₂ m : ℕ}{xs : Vec ℕ m} → Sorted₂ (x₁ ∷ x₂ ∷ xs) → x₁ ≤* xs
 cons-sorted₂-inv₄ (cons-sorted₂ (x≤*xxs _ x₂≤*xs) _) = x₂≤*xs
+
+cons-sorted₂-inv₅ : ∀ {m x₁ x₂ : ℕ}{xs : Vec ℕ m} → Sorted₂ (x₁ ∷ x₂ ∷ xs) → Sorted₂ (x₁ ∷ xs)
+cons-sorted₂-inv₅ (cons-sorted₂ (x≤*xxs _ x₁≤*xs) (cons-sorted₂ _ sxs)) = cons-sorted₂ x₁≤*xs sxs
 
 -- And the Permutation relation
 data Permutation : ∀ {m : ℕ} → Vec ℕ m → Vec ℕ m → Set where
@@ -190,16 +194,13 @@ insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-so
 -- ... | false = {!!}
 
 
-go : ∀ {m x₁ x₂ : ℕ}{xs : Vec ℕ m} → Sorted₂ (x₁ ∷ x₂ ∷ xs) → Sorted₂ (x₁ ∷ xs)
-go (cons-sorted₂ (x≤*xxs _ x₁≤*xs) (cons-sorted₂ _ sxs)) = cons-sorted₂ x₁≤*xs sxs
-
 aux : ∀ {m x₁ x₂ : ℕ}{xs : Vec ℕ m} → x₂ ≤ x₁ → Sorted₂ (x₂ ∷ xs) → x₂ ≤* (insertDec x₁ xs)
 aux {xs = []} x₂≤x₁ sx₂xs = x≤*xxs x₂≤x₁ x≤*[]
 aux {x₁ = x₁}{xs = x ∷ xs} x₂≤x₁ sx₂xs with x₁ ≤? x
 aux x₂≤x₁ sx₂xs | yes p = x≤*xxs x₂≤x₁ (x≤*xxs (≤-trans x₂≤x₁ p) (cons-sorted₂-inv₄ sx₂xs))
 aux x₂≤x₁ sx₂xs | no ¬p = x≤*xxs
                              (cons-sorted₂-inv₃ sx₂xs) -- x₂ ≤ x
-                             (aux x₂≤x₁ (go sx₂xs)) -- x₂ ≤* insertDec x₁ xs
+                             (aux x₂≤x₁ (cons-sorted₂-inv₅ sx₂xs)) -- x₂ ≤* insertDec x₁ xs
 
 
 insertDec-Sorted₂-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted₂ xs → Sorted₂ (insertDec x xs)
