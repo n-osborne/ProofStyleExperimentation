@@ -193,7 +193,11 @@ insertDec-sorted-in-out x (x₁ ∷ xs) sxs  | no ¬p | x₂ ∷ xs₂ = cons-so
 -- ... | true  = cons_sorted (<ᵇ⇒< x x₁ (T (x <ᵇ x₁))) sxs
 -- ... | false = {!!}
 
+{-
+  Proof that insertDec preserves the Sorted₂ property.
 
+  We will need an auxiliary lemma to avoid that the proof in the recursive case became to big
+-}
 aux : ∀ {m x₁ x₂ : ℕ}{xs : Vec ℕ m} → x₂ ≤ x₁ → Sorted₂ (x₂ ∷ xs) → x₂ ≤* (insertDec x₁ xs)
 aux {xs = []} x₂≤x₁ sx₂xs = x≤*xxs x₂≤x₁ x≤*[]
 aux {x₁ = x₁}{xs = x ∷ xs} x₂≤x₁ sx₂xs with x₁ ≤? x
@@ -202,7 +206,19 @@ aux x₂≤x₁ sx₂xs | no ¬p = x≤*xxs
                              (cons-sorted₂-inv₃ sx₂xs) -- x₂ ≤ x
                              (aux x₂≤x₁ (cons-sorted₂-inv₅ sx₂xs)) -- x₂ ≤* insertDec x₁ xs
 
+{—
+  We procced by induction on the Vec
 
+  the [] case is trivial.
+
+  In the cons case, we procced by case analysis on x ≤? x₁
+  The yes case : Goal is Sorted₂ (x ∷ x₁ ∷ xs)
+                      x ≤* (x₁ ∷ xs) is build by transitivity of ≤*
+                      Sorted₂ (x₁ ∷ xs) is given
+  The no case : Goal is Sorted₂ (x₁ ∷ (insertDec x xs))
+                     x₁ ≤* (insertDec x xs) is build using aux lemma
+                     Sorted₂ (insertDec x xs) is build using the induction hypothesis.
+-}
 insertDec-Sorted₂-in-out : ∀ {m : ℕ}(x : ℕ)(xs : Vec ℕ m) → Sorted₂ xs → Sorted₂ (insertDec x xs)
 insertDec-Sorted₂-in-out x [] sxs = cons-sorted₂ x≤*[] sxs
 insertDec-Sorted₂-in-out x (x₁ ∷ xs) sxs with x ≤? x₁
